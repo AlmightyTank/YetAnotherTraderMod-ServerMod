@@ -3708,6 +3708,90 @@
                 "BuyRestrictionMax": 1,
                 "BuyRestrictionCurrent": 0
             }
+        },
+        {
+            "_id": "6a427e0723bd4367388f4344",
+            "_tpl": "651450ce0e00edc794068371",
+            "parentId": "hideout",
+            "slotId": "hideout",
+            "upd": {
+                "StackObjectsCount": 4,
+                "UnlimitedCount": false,
+                "BuyRestrictionMax": 1,
+                "BuyRestrictionCurrent": 0
+            }
+        },
+        {
+            "_id": "6a427e0723bd4367388f4345",
+            "_tpl": "65144ff50e00edc79406836f",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_muzzle"
+        },
+        {
+            "_id": "6a427e0723bd4367388f4346",
+            "_tpl": "57c44f4f2459772d2c627113",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_reciever"
+        },
+        {
+            "_id": "6a427e0723bd4367388f4347",
+            "_tpl": "65118f531b90b4fc77015083",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_magazine"
+        },
+        {
+            "_id": "6a427e0723bd4367388f4348",
+            "_tpl": "5a69a2ed8dc32e000d46d1f1",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_pistol_grip"
+        },
+        {
+            "_id": "6a427e0723bd4367388f4349",
+            "_tpl": "6130ca3fd92c473c77020dbd",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_charge"
+        },
+        {
+            "_id": "6a427e0723bd4367388f434a",
+            "_tpl": "67069cbbb29a2cd33803338c",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_mount_000"
+        },
+        {
+            "_id": "6a427e0723bd4367388f434b",
+            "_tpl": "6565c3ab977bcc2dbb01c2e7",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_handguard"
+        },
+        {
+            "_id": "6a427e0723bd4367388f434c",
+            "_tpl": "6565c0c2ff7eb7070409084c",
+            "parentId": "6a427e0723bd4367388f4344",
+            "slotId": "mod_foregrip"
+        },
+        {
+            "_id": "6a427e0723bd4367388f434d",
+            "_tpl": "5d44069ca4b9361ebd26fc37",
+            "parentId": "6a427e0723bd4367388f4348",
+            "slotId": "mod_stock_000"
+        },
+        {
+            "_id": "6a427e0723bd4367388f434e",
+            "_tpl": "58491f3324597764bc48fa02",
+            "parentId": "6a427e0723bd4367388f434a",
+            "slotId": "mod_scope"
+        },
+        {
+            "_id": "6a427e0723bd4367388f434f",
+            "_tpl": "67069d02ad91f3a63c0bc2b0",
+            "parentId": "6a427e0723bd4367388f434b",
+            "slotId": "mod_mount"
+        },
+        {
+            "_id": "6a427e0723bd4367388f4350",
+            "_tpl": "56def37dd2720bec348b456a",
+            "parentId": "6a427e0723bd4367388f434f",
+            "slotId": "mod_tactical_001"
         }
     ],
     "barter_scheme": {
@@ -4459,7 +4543,7 @@
             [
                 {
                     "_tpl": "5449016a4bdc2d6f028b456f",
-                    "count": 117650
+                    "count": 128650
                 }
             ]
         ],
@@ -5078,6 +5162,14 @@
                     "_tpl": "5449016a4bdc2d6f028b456f"
                 }
             ]
+        ],
+        "6a427e0723bd4367388f4344": [
+            [
+                {
+                    "count": 1650000,
+                    "_tpl": "5449016a4bdc2d6f028b456f"
+                }
+            ]
         ]
     },
     "loyal_level_items": {
@@ -5171,8 +5263,8 @@
         "6a3007dfd2999bc7b9bba988": 3,
         "6a2e2072d2999bc7b9bba8dd": 2,
         "6a3007dfd2999bc7b9bba989": 3,
-        "6a3007dfd2999bc7b9bba98a": 4,
-        "6a3007dfd2999bc7b9bba98b": 3,
+        "6a3007dfd2999bc7b9bba98a": 3,
+        "6a3007dfd2999bc7b9bba98b": 2,
         "6a3007dfd2999bc7b9bba98c": 3,
         "6a2bfc3951ab7898b840fc8c": 3,
         "6a3007dfd2999bc7b9bba98d": 2,
@@ -5236,6 +5328,7 @@
         "6b1b06e40b4196d378a3d4c8": 3,
         "6a41407d82d8dd83f87b206c": 2,
         "6a417b0582d8dd83f87b20f1": 3,
-        "6a417b0582d8dd83f87b20f2": 3
+        "6a417b0582d8dd83f87b20f2": 3,
+        "6a427e0723bd4367388f4344": 4
     }
 }
