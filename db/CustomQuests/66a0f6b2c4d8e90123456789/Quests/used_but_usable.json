@@ -251,7 +251,7 @@
                     "isResetOnConditionFailed": false,
                     "oneSessionOnly": false,
                     "parentId": "",
-                    "type": "Completion",
+                    "type": "Exploration",
                     "value": 1,
                     "visibilityConditions": []
                 },
@@ -287,7 +287,7 @@
                     "isResetOnConditionFailed": false,
                     "oneSessionOnly": false,
                     "parentId": "",
-                    "type": "Completion",
+                    "type": "Exploration",
                     "value": 1,
                     "visibilityConditions": [
                         {
