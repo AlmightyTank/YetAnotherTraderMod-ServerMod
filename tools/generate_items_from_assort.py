@@ -50,12 +50,23 @@ Keep your current config/items.json tuning and only fill rows/settings that are 
 
 Limit repeated barter ingredients so one item does not dominate generated recipes:
   python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --generate-barter-schemes cash-only --barter-max-uses-per-item 5
+
+When an ammo row has an AmmoBarterPackTplId target but no matching pack root offer
+in assort.json, the script now creates the missing pack offer in assort.json, adds
+barter_scheme and loyal_level_items entries, and writes PackOfferId into items.json.
+Use --assort-out to write the updated assort somewhere else, or --no-update-assort
+to keep the old warning-only behavior.
+
+Custom ammo helpers:
+  python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --custom-ammo-tpl <looseTpl>
+  python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --ammo-pack-map config/custom_ammo_packs.json
 """
 
 from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import random
 import re
@@ -63,7 +74,7 @@ import time
 import urllib.error
 import urllib.request
 
-SCRIPT_VERSION = "2.10.0"
+SCRIPT_VERSION = "2.11.0"
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -395,6 +406,12 @@ KNOWN_AMMO_TPLS: set[str] = {
     "57a0dfb82459774d3078b56c",  # 9x39 SP-5
     "57a0e5022459774d1673f889",  # 9x39 SP-6
     "5c0d668f86f7747ccb7f13b2",  # 9x39 SPP
+    "5e023d48186a883be655e551",  # 7.62x54 BS
+    "5887431f2459777e1612938f",  # 7.62x54 LPS
+    "560d61e84bdc2da74d8b4571",  # 7.62x54 SNB
+    "6a427a2e38a6d33bffe9829b",  # Tony/custom 7.62x54 LPS clone
+    "6a427a2e38a6d33bffe98292",  # Tony/custom 7.62x54 BS clone
+    "6a427a2e38a6d33bffe9829d",  # Tony/custom 7.62x54 SNB clone
 }
 
 AMMO_NAME_START_RE = re.compile(
@@ -437,7 +454,33 @@ BUILT_IN_AMMO_PACKS: dict[str, dict[str, Any]] = {
     "57a0dfb82459774d3078b56c": {"AmmoBarterPackTplId": "657025d4c5d7d4cb4d078585", "AmmoBarterPackItemName": "9x39mm SP-5 gs ammo pack (20 pcs)", "AmmoBarterPackSize": 20},
     "57a0e5022459774d1673f889": {"AmmoBarterPackTplId": "657025dabfc87b3a34093256", "AmmoBarterPackItemName": "9x39mm SP-6 gs ammo pack (20 pcs)", "AmmoBarterPackSize": 20},
     "5c0d668f86f7747ccb7f13b2": {"AmmoBarterPackTplId": "657025dfcfc010a0f5006a3b", "AmmoBarterPackItemName": "9x39mm SPP gs ammo pack (20 pcs)", "AmmoBarterPackSize": 20},
+    "6a427a2e38a6d33bffe9829b": {"AmmoBarterPackTplId": "65702577cfc010a0f5006a2c", "AmmoBarterPackItemName": "7.62x54mm R LPS gzh ammo pack (20 pcs)", "AmmoBarterPackSize": 20},
+    "6a427a2e38a6d33bffe98292": {"AmmoBarterPackTplId": "648984b8d5b4df6140000a1a", "AmmoBarterPackItemName": "7.62x54mm R BS gs ammo pack (20 pcs)", "AmmoBarterPackSize": 20},
+    "6a427a2e38a6d33bffe9829d": {"AmmoBarterPackTplId": "560d75f54bdc2da74d8b4573", "AmmoBarterPackItemName": "7.62x54mm R SNB gzh ammo pack (20 pcs)", "AmmoBarterPackSize": 20},
 }
+
+# Runtime-loaded custom ammo support. Use --custom-ammo-tpl for loose ammo
+# templates that do not have names the regex can recognize, and use
+# --custom-ammo-pack-map for custom loose-ammo -> ammo-pack template mapping.
+CUSTOM_AMMO_TPLS: set[str] = set()
+CUSTOM_AMMO_PACKS: dict[str, dict[str, Any]] = {}
+
+# Broader fallback for custom calibers. The weapon-name guard in is_ammo_offer()
+# prevents guns like "7.62x39 assault rifle" from being treated as ammo.
+GENERIC_AMMO_NAME_START_RE = re.compile(
+    r"^(?:\.?\d+(?:\.\d+)?x\d+(?:\.\d+)?(?:mm)?|\d{1,2}/\d{2}|\.\d+(?:\.\d+)?)\b",
+    re.IGNORECASE,
+)
+
+# Offline readability for Tony/custom cloned 7.62x54R rows.
+BUILT_IN_NAMES.update({
+    "6a427a2e38a6d33bffe9829b": "7.62x54mm R LPS gzh",
+    "6a427a2e38a6d33bffe98292": "7.62x54mm R BS gs",
+    "6a427a2e38a6d33bffe9829d": "7.62x54mm R SNB gzh",
+    "65702577cfc010a0f5006a2c": "7.62x54mm R LPS gzh ammo pack (20 pcs)",
+    "648984b8d5b4df6140000a1a": "7.62x54mm R BS gs ammo pack (20 pcs)",
+    "560d75f54bdc2da74d8b4573": "7.62x54mm R SNB gzh ammo pack (20 pcs)",
+})
 
 WEAPON_NAME_HINTS = (
     "assault rifle", "sniper rifle", "bolt-action", "carbine", "shotgun",
@@ -447,11 +490,17 @@ WEAPON_NAME_HINTS = (
 
 
 def get_known_ammo_pack_tpl_ids() -> set[str]:
-    return {
+    pack_tpl_ids = {
         str(pack_info.get("AmmoBarterPackTplId", ""))
         for pack_info in BUILT_IN_AMMO_PACKS.values()
         if str(pack_info.get("AmmoBarterPackTplId", ""))
     }
+    pack_tpl_ids.update(
+        str(pack_info.get("AmmoBarterPackTplId", ""))
+        for pack_info in CUSTOM_AMMO_PACKS.values()
+        if str(pack_info.get("AmmoBarterPackTplId", ""))
+    )
+    return pack_tpl_ids
 
 
 def strip_json_comments_and_trailing_commas(text: str) -> str:
@@ -487,6 +536,185 @@ def get_ci(obj: dict[str, Any], *keys: str, default: Any = None) -> Any:
             return obj[actual_key]
 
     return default
+
+
+def get_existing_key_ci(obj: dict[str, Any], *keys: str) -> str | None:
+    """Return the actual key name already present in a dict, ignoring case."""
+    if not isinstance(obj, dict):
+        return None
+
+    for key in keys:
+        if key in obj:
+            return key
+
+    lower_map = {str(k).lower(): str(k) for k in obj.keys()}
+    for key in keys:
+        actual_key = lower_map.get(key.lower())
+        if actual_key is not None:
+            return actual_key
+
+    return None
+
+
+def ensure_assort_section(assort: dict[str, Any], preferred_key: str, *alternate_keys: str, default_value: Any) -> Any:
+    """Get/create a mutable assort section while preserving the file's existing key casing."""
+    existing_key = get_existing_key_ci(assort, preferred_key, *alternate_keys)
+    if existing_key is None:
+        assort[preferred_key] = default_value
+        return assort[preferred_key]
+
+    section = assort.get(existing_key)
+    if section is None:
+        section = default_value
+        assort[existing_key] = section
+    return section
+
+
+def parse_id_list(values: list[str] | None) -> set[str]:
+    parsed: set[str] = set()
+    for value in values or []:
+        for part in str(value).replace(";", ",").split(","):
+            part = part.strip()
+            if part:
+                parsed.add(part)
+    return parsed
+
+
+def normalize_custom_ammo_pack_info(loose_tpl: str, raw_value: Any, default_pack_size: int) -> dict[str, Any] | None:
+    """Normalize custom loose-ammo -> pack mapping rows from JSON."""
+    if isinstance(raw_value, str):
+        pack_tpl = raw_value.strip()
+        if not pack_tpl:
+            return None
+        return {
+            "AmmoBarterPackTplId": pack_tpl,
+            "AmmoBarterPackSize": max(1, int(default_pack_size or 30)),
+        }
+
+    if not isinstance(raw_value, dict):
+        return None
+
+    pack_tpl = str(get_ci(
+        raw_value,
+        "AmmoBarterPackTplId",
+        "ammoBarterPackTplId",
+        "PackTplId",
+        "packTplId",
+        "TplId",
+        "tplId",
+        "_tpl",
+        default="",
+    ) or "").strip()
+    if not pack_tpl:
+        return None
+
+    pack_size_raw = get_ci(
+        raw_value,
+        "AmmoBarterPackSize",
+        "ammoBarterPackSize",
+        "PackSize",
+        "packSize",
+        "Size",
+        "size",
+        default=default_pack_size,
+    )
+    try:
+        pack_size = max(1, int(pack_size_raw or default_pack_size or 30))
+    except (TypeError, ValueError):
+        pack_size = max(1, int(default_pack_size or 30))
+
+    info = {
+        "AmmoBarterPackTplId": pack_tpl,
+        "AmmoBarterPackSize": pack_size,
+    }
+
+    pack_name = get_ci(
+        raw_value,
+        "AmmoBarterPackItemName",
+        "ammoBarterPackItemName",
+        "PackName",
+        "packName",
+        "ItemName",
+        "itemName",
+        "Name",
+        "name",
+        default=None,
+    )
+    if pack_name:
+        info["AmmoBarterPackItemName"] = str(pack_name)
+
+    return info
+
+
+def load_custom_ammo_pack_map(path: Path | None, default_pack_size: int) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Load optional custom ammo pack mappings for cloned/modded ammo."""
+    warnings: list[str] = []
+    if path is None:
+        return {}, warnings
+
+    if not path.exists():
+        warnings.append(f"Custom ammo pack map was not found: {path}")
+        return {}, warnings
+
+    data = load_json(path)
+    rows: list[tuple[str, Any]] = []
+
+    if isinstance(data, dict):
+        rows = [(str(loose_tpl), raw_value) for loose_tpl, raw_value in data.items()]
+    elif isinstance(data, list):
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue
+            loose_tpl = str(get_ci(
+                entry,
+                "LooseAmmoTplId",
+                "looseAmmoTplId",
+                "AmmoTplId",
+                "ammoTplId",
+                "TplId",
+                "tplId",
+                "_tpl",
+                default="",
+            ) or "").strip()
+            if loose_tpl:
+                rows.append((loose_tpl, entry))
+    else:
+        warnings.append(f"Custom ammo pack map ignored {path}: expected a JSON object or list")
+        return {}, warnings
+
+    mapping: dict[str, dict[str, Any]] = {}
+    skipped = 0
+    for loose_tpl, raw_value in rows:
+        loose_tpl = str(loose_tpl or "").strip()
+        if not loose_tpl:
+            skipped += 1
+            continue
+        info = normalize_custom_ammo_pack_info(loose_tpl, raw_value, default_pack_size)
+        if info is None:
+            skipped += 1
+            continue
+        mapping[loose_tpl] = info
+
+    if mapping:
+        warnings.append(f"Loaded {len(mapping)} custom ammo pack mappings from {path}")
+    if skipped:
+        warnings.append(f"Skipped {skipped} invalid custom ammo pack mappings from {path}")
+
+    return mapping, warnings
+
+
+def configure_custom_ammo_support(
+    custom_ammo_tpls: set[str],
+    custom_ammo_pack_map: dict[str, dict[str, Any]],
+) -> None:
+    """Install custom ammo hints into the module-level matcher state."""
+    CUSTOM_AMMO_TPLS.update(str(tpl).strip() for tpl in custom_ammo_tpls if str(tpl).strip())
+    for loose_tpl, pack_info in custom_ammo_pack_map.items():
+        loose_tpl = str(loose_tpl or "").strip()
+        if not loose_tpl or not isinstance(pack_info, dict):
+            continue
+        CUSTOM_AMMO_PACKS[loose_tpl] = dict(pack_info)
+        CUSTOM_AMMO_TPLS.add(loose_tpl)
 
 
 def get_item_id(item: dict[str, Any]) -> str:
@@ -1123,17 +1351,26 @@ def is_real_barter_scheme(scheme: list[list[dict[str, Any]]]) -> bool:
 
 def is_ammo_offer(item_name: str, sold_tpl: str) -> bool:
     """True for ammo rows. Avoids weapon names that merely include a caliber."""
-    if sold_tpl in KNOWN_AMMO_TPLS:
+    if sold_tpl in KNOWN_AMMO_TPLS or sold_tpl in CUSTOM_AMMO_TPLS or sold_tpl in CUSTOM_AMMO_PACKS:
         return True
 
     normalized_name = (item_name or "").strip().lower()
-    if not normalized_name:
+    if not normalized_name or normalized_name.startswith("unknown_item_"):
         return False
 
     if any(hint in normalized_name for hint in WEAPON_NAME_HINTS):
         return False
 
-    return AMMO_NAME_START_RE.search(normalized_name) is not None
+    if "ammo pack" in normalized_name:
+        return True
+
+    if "ammo" in normalized_name and not any(hint in normalized_name for hint in WEAPON_NAME_HINTS):
+        return True
+
+    return (
+        AMMO_NAME_START_RE.search(normalized_name) is not None
+        or GENERIC_AMMO_NAME_START_RE.search(normalized_name) is not None
+    )
 
 
 def ammo_pack_size_for_offer(item_name: str, sold_tpl: str, default_pack_size: int) -> int:
@@ -1187,6 +1424,17 @@ def find_ammo_pack_for_offer(
         fallback = dict(BUILT_IN_AMMO_PACKS[sold_tpl])
         fallback.setdefault("AmmoBarterPackSize", max(1, int(default_pack_size or 30)))
         return fallback
+
+    if sold_tpl in CUSTOM_AMMO_PACKS:
+        custom = dict(CUSTOM_AMMO_PACKS[sold_tpl])
+        custom.setdefault("AmmoBarterPackSize", max(1, int(default_pack_size or 30)))
+        pack_tpl = str(custom.get("AmmoBarterPackTplId", ""))
+        if pack_tpl and not custom.get("AmmoBarterPackItemName"):
+            resolved_pack_name = resolve_name(pack_tpl, tarkov_dev_names, locale_names, catalog_names)
+            if resolved_pack_name.startswith("UNKNOWN_ITEM_"):
+                resolved_pack_name = f"{item_name} ammo pack ({custom['AmmoBarterPackSize']} pcs)"
+            custom["AmmoBarterPackItemName"] = resolved_pack_name
+        return custom
 
     target_name = normalize_ammo_pack_match_name(item_name)
     if not target_name:
@@ -1278,6 +1526,163 @@ def build_ammo_pack_offer_id_lookup(
             pack_offer_id_by_tpl.setdefault(sold_tpl, offer_id)
 
     return pack_offer_id_by_tpl
+
+
+def denormalize_barter_scheme_for_assort(scheme: list[list[dict[str, Any]]]) -> list[list[dict[str, Any]]]:
+    """Convert generated items.json BarterScheme rows back to raw assort barter_scheme shape."""
+    raw_scheme: list[list[dict[str, Any]]] = []
+
+    if not isinstance(scheme, list):
+        return raw_scheme
+
+    for option in scheme:
+        if not isinstance(option, list):
+            continue
+
+        raw_option: list[dict[str, Any]] = []
+        for payment in option:
+            if not isinstance(payment, dict):
+                continue
+
+            payment_tpl = str(payment.get("TplId", "") or "")
+            if not payment_tpl:
+                continue
+
+            raw_option.append({
+                "count": clean_number(float(payment.get("Count", 0) or 0)),
+                "_tpl": payment_tpl,
+            })
+
+        if raw_option:
+            raw_scheme.append(raw_option)
+
+    return raw_scheme
+
+
+def deterministic_assort_offer_id(existing_ids: set[str], loose_offer_id: str, pack_tpl_id: str) -> str:
+    """Create a stable 24-char hex root offer id for generated pack offers."""
+    seed = f"tony-generated-ammo-pack:{loose_offer_id}:{pack_tpl_id}"
+    for salt in range(1000):
+        suffix = "" if salt == 0 else f":{salt}"
+        candidate = hashlib.sha1(f"{seed}{suffix}".encode("utf-8")).hexdigest()[:24]
+        if candidate not in existing_ids:
+            return candidate
+
+    raise RuntimeError(f"Could not generate unique ammo pack offer id for {pack_tpl_id}")
+
+
+def get_number_ci(obj: dict[str, Any], *keys: str, default: float | None = None) -> float | None:
+    value = get_ci(obj, *keys, default=default)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def set_scaled_upd_count(upd: dict[str, Any], key: str, source_value: float | None, divisor: int) -> None:
+    if source_value is None:
+        return
+
+    divisor = max(1, int(divisor or 1))
+    scaled_value = max(1, int(float(source_value) // divisor))
+    upd[key] = scaled_value
+
+
+def build_generated_ammo_pack_root_item(
+    pack_offer_id: str,
+    pack_tpl_id: str,
+    source_root: dict[str, Any],
+    pack_count: int,
+) -> dict[str, Any]:
+    """Build a new hideout root offer for a missing ammo pack template."""
+    source_upd = get_ci(source_root, "upd", "Upd", default=None)
+    source_upd = copy.deepcopy(source_upd) if isinstance(source_upd, dict) else {}
+
+    pack_count = max(1, int(pack_count or 1))
+    stack_count = get_number_ci(source_upd, "StackObjectsCount", "stackObjectsCount", default=None)
+    buy_restriction_max = get_number_ci(source_upd, "BuyRestrictionMax", "buyRestrictionMax", default=None)
+
+    if not source_upd:
+        source_upd = {"StackObjectsCount": 1, "UnlimitedCount": False}
+
+    if stack_count is not None:
+        set_scaled_upd_count(source_upd, "StackObjectsCount", stack_count, pack_count)
+    else:
+        source_upd.setdefault("StackObjectsCount", 1)
+
+    if buy_restriction_max is not None:
+        set_scaled_upd_count(source_upd, "BuyRestrictionMax", buy_restriction_max, pack_count)
+
+    # Generated root offers should start clean every time.
+    if "BuyRestrictionCurrent" in source_upd:
+        source_upd["BuyRestrictionCurrent"] = 0
+
+    return {
+        "_id": pack_offer_id,
+        "_tpl": pack_tpl_id,
+        "parentId": "hideout",
+        "slotId": "hideout",
+        "upd": source_upd,
+    }
+
+
+def add_missing_ammo_pack_offer_to_assort(
+    assort: dict[str, Any],
+    source_root: dict[str, Any],
+    pack_tpl_id: str,
+    normalized_scheme: list[list[dict[str, Any]]],
+    pack_count: int,
+) -> tuple[str, bool]:
+    """Add a root pack offer, barter_scheme row, and loyalty row to assort.json data."""
+    items = ensure_assort_section(assort, "items", "Items", default_value=[])
+    barter_scheme = ensure_assort_section(assort, "barter_scheme", "BarterScheme", default_value={})
+    loyal_level_items = ensure_assort_section(
+        assort,
+        "loyal_level_items",
+        "LoyalLevelItems",
+        "loyalLevelItems",
+        default_value={},
+    )
+
+    if not isinstance(items, list):
+        raise ValueError("assort items section is not a list")
+    if not isinstance(barter_scheme, dict):
+        raise ValueError("assort barter_scheme section is not an object")
+    if not isinstance(loyal_level_items, dict):
+        raise ValueError("assort loyal_level_items section is not an object")
+
+    existing_pack_offer = next(
+        (item for item in items if isinstance(item, dict) and get_parent_id(item) == "hideout" and get_item_tpl(item) == pack_tpl_id),
+        None,
+    )
+    if existing_pack_offer is not None:
+        existing_offer_id = get_item_id(existing_pack_offer)
+        if existing_offer_id:
+            changed = False
+            if existing_offer_id not in barter_scheme:
+                barter_scheme[existing_offer_id] = denormalize_barter_scheme_for_assort(normalized_scheme)
+                changed = True
+            if existing_offer_id not in loyal_level_items:
+                loyal_level_items[existing_offer_id] = loyal_level_items.get(get_item_id(source_root), 1)
+                changed = True
+            return existing_offer_id, changed
+
+    existing_ids = {get_item_id(item) for item in items if isinstance(item, dict) and get_item_id(item)}
+    source_offer_id = get_item_id(source_root)
+    pack_offer_id = deterministic_assort_offer_id(existing_ids, source_offer_id, pack_tpl_id)
+
+    items.append(build_generated_ammo_pack_root_item(
+        pack_offer_id=pack_offer_id,
+        pack_tpl_id=pack_tpl_id,
+        source_root=source_root,
+        pack_count=pack_count,
+    ))
+    barter_scheme[pack_offer_id] = denormalize_barter_scheme_for_assort(normalized_scheme)
+    loyal_level_items[pack_offer_id] = loyal_level_items.get(source_offer_id, 1)
+
+    return pack_offer_id, True
 
 
 def infer_barter_tags(item_name: str, sold_tpl: str) -> list[str]:
@@ -1743,7 +2148,8 @@ def generate_items(
     barter_rng: random.Random,
     ammo_barter_pack_size: int,
     barter_max_uses_per_item: int,
-) -> tuple[list[dict[str, Any]], list[str]]:
+    update_assort_missing_ammo_packs: bool,
+) -> tuple[list[dict[str, Any]], list[str], bool]:
     items = get_ci(assort, "items", "Items", default=[])
     barter_scheme = get_ci(assort, "barter_scheme", "BarterScheme", default={})
 
@@ -1773,6 +2179,7 @@ def generate_items(
     output: list[dict[str, Any]] = []
     warnings: list[str] = []
     barter_usage_counts: Counter[str] = Counter()
+    assort_modified = False
 
     for root in sellable_roots:
         offer_id = get_item_id(root)
@@ -1889,6 +2296,22 @@ def generate_items(
                 row["AmmoBarterPackTplId"] = pack_tpl_id
 
                 pack_offer_id = ammo_pack_offer_id_by_tpl.get(pack_tpl_id, "")
+                if not pack_offer_id and update_assort_missing_ammo_packs:
+                    pack_offer_id, created_pack_offer = add_missing_ammo_pack_offer_to_assort(
+                        assort=assort,
+                        source_root=root,
+                        pack_tpl_id=pack_tpl_id,
+                        normalized_scheme=normalized_scheme,
+                        pack_count=pack_count,
+                    )
+                    ammo_pack_offer_id_by_tpl[pack_tpl_id] = pack_offer_id
+                    if created_pack_offer:
+                        assort_modified = True
+                        warnings.append(
+                            f"Added/updated standalone ammo pack offer {pack_offer_id} for {item_name} ({offer_id}) "
+                            f"using pack template {pack_tpl_id}"
+                        )
+
                 if pack_offer_id:
                     row["PackOfferId"] = pack_offer_id
                     warnings.append(
@@ -1898,7 +2321,7 @@ def generate_items(
                 else:
                     warnings.append(
                         f"Ammo barter pack target for {item_name} ({offer_id}): {pack_tpl_id}; "
-                        "no matching standalone pack offer was found in assort.json, so PackOfferId was not written"
+                        "no matching standalone pack offer was found in assort.json and --no-update-assort was used, so PackOfferId was not written"
                     )
             else:
                 warnings.append(
@@ -1933,7 +2356,7 @@ def generate_items(
     if unknown_names:
         warnings.append(f"Unknown item names: {sorted(set(unknown_names))}")
 
-    return output, warnings
+    return output, warnings, assort_modified
 
 
 def build_report(out_path: Path, output: list[dict[str, Any]], warnings: list[str]) -> str:
@@ -2008,6 +2431,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=f"Generate Tony config/items.json from data/assort.json v{SCRIPT_VERSION}")
     parser.add_argument("--version", action="version", version=f"generate_items_from_assort.py {SCRIPT_VERSION}")
     parser.add_argument("--assort", default="data/assort.json", help="Path to trader assort.json")
+    parser.add_argument("--assort-out", default=None, help="Path to write updated assort.json when missing ammo pack offers are added. Defaults to --assort")
+    parser.add_argument("--no-update-assort", dest="update_assort_missing_ammo_packs", action="store_false", help="Do not add missing standalone ammo pack offers to assort.json")
+    parser.set_defaults(update_assort_missing_ammo_packs=True)
     parser.add_argument("--out", default="config/items.json", help="Path to write generated items.json")
     parser.add_argument("--catalog", default=None, help="Optional existing items.json/list used for readable names and fallback prices")
     parser.add_argument("--locale", default=None, help="Optional SPT English locale JSON used for readable item names")
@@ -2030,6 +2456,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--barter-max-uses-per-item", type=int, default=0, help="Maximum number of generated offers that should use the same barter ingredient. 0 disables the cap")
     parser.add_argument("--barter-seed", type=int, default=1337, help="Seed for deterministic generated barter recipes")
     parser.add_argument("--ammo-barter-pack-size", type=int, default=30, help="Ammo generated barters are valued as this many rounds instead of one round")
+    parser.add_argument("--custom-ammo-tpl", action="append", default=[], help="Extra loose ammo template ID to force as ammo. Can be repeated or comma-separated")
+    parser.add_argument("--custom-ammo-pack-map", "--ammo-pack-map", dest="custom_ammo_pack_map", default=None, help="Optional JSON mapping custom loose ammo TplIds to ammo pack TplIds/pack sizes")
 
     tarkov_dev_group = parser.add_mutually_exclusive_group()
     tarkov_dev_group.add_argument("--tarkov-dev", dest="tarkov_dev", action="store_true", help="Use tarkov.dev API for item names/prices; default")
@@ -2047,6 +2475,7 @@ def main() -> int:
     args = parse_args()
 
     assort_path = Path(args.assort)
+    assort_out_path = Path(args.assort_out) if args.assort_out else assort_path
     out_path = Path(args.out)
     catalog_path = Path(args.catalog) if args.catalog else None
     locale_path = Path(args.locale) if args.locale else None
@@ -2067,6 +2496,17 @@ def main() -> int:
     current_settings_warnings: list[str] = []
     if args.keep_current_settings:
         existing_item_settings, current_settings_warnings = load_existing_item_settings(current_settings_path)
+
+    custom_ammo_map_path = Path(args.custom_ammo_pack_map) if args.custom_ammo_pack_map else None
+    custom_ammo_pack_map, custom_ammo_warnings = load_custom_ammo_pack_map(
+        custom_ammo_map_path,
+        default_pack_size=max(1, int(args.ammo_barter_pack_size or 30)),
+    )
+    configure_custom_ammo_support(
+        custom_ammo_tpls=parse_id_list(args.custom_ammo_tpl),
+        custom_ammo_pack_map=custom_ammo_pack_map,
+    )
+
     tarkov_dev_names, tarkov_dev_prices, tarkov_dev_warnings = get_tarkov_dev_names_and_prices(
         enabled=bool(args.tarkov_dev),
         cache_path=tarkov_dev_cache_path,
@@ -2074,7 +2514,7 @@ def main() -> int:
         timeout_seconds=float(args.tarkov_dev_timeout),
     )
 
-    output, warnings = generate_items(
+    output, warnings, assort_modified = generate_items(
         assort=assort,
         tarkov_dev_names=tarkov_dev_names,
         tarkov_dev_prices=tarkov_dev_prices,
@@ -2089,6 +2529,7 @@ def main() -> int:
         barter_rng=random.Random(args.barter_seed),
         ammo_barter_pack_size=args.ammo_barter_pack_size,
         barter_max_uses_per_item=max(0, int(args.barter_max_uses_per_item or 0)),
+        update_assort_missing_ammo_packs=bool(args.update_assort_missing_ammo_packs),
     )
     if args.keep_current_settings:
         output, merge_warnings = merge_current_settings(
@@ -2131,7 +2572,12 @@ def main() -> int:
 
     output = order_items_rows(output)
 
-    warnings = tarkov_dev_warnings + current_settings_warnings + warnings
+    warnings = tarkov_dev_warnings + current_settings_warnings + custom_ammo_warnings + warnings
+
+    if assort_modified:
+        assort_out_path.parent.mkdir(parents=True, exist_ok=True)
+        assort_out_path.write_text(json.dumps(assort, indent=4, ensure_ascii=False) + "\n", encoding="utf-8")
+        warnings.append(f"Updated assort.json with generated ammo pack offers: {assort_out_path}")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(output, indent=4, ensure_ascii=False) + "\n", encoding="utf-8")

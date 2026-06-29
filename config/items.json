@@ -2997,5 +2997,102 @@
         ],
         "AlwaysBarter": false,
         "AlwaysInStock": false
+    },
+    {
+        "OfferId": "6a427e0723bd4367388f4344",
+        "TplId": "651450ce0e00edc794068371",
+        "ItemName": "SR-3M 9x39 compact assault rifle",
+        "Price": 1650000,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "590c2d8786f774245b1f03f3",
+                    "ItemName": "Screwdriver",
+                    "Count": 5
+                },
+                {
+                    "TplId": "590c2b4386f77425357b6123",
+                    "ItemName": "Pliers",
+                    "Count": 5
+                },
+                {
+                    "TplId": "5734770f24597738025ee254",
+                    "ItemName": "Strike Cigarettes",
+                    "Count": 8
+                },
+                {
+                    "TplId": "5d6fc78386f77449d825f9dc",
+                    "ItemName": "Gunpowder \"Eagle\"",
+                    "Count": 8
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
+    },
+    {
+        "OfferId": "6a427a2e38a6d33bffe98292",
+        "TplId": "5e023d48186a883be655e551",
+        "ItemName": "7.62x54mm R BS gs",
+        "Price": 1190,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "575062b524597720a31c09a1",
+                    "ItemName": "Can of Ice Green tea",
+                    "Count": 2
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false,
+        "AmmoBarterPackTplId": "648984b8d5b4df6140000a1a",
+        "PackOfferId": "2cd004e264ee00bc945ecdea"
+    },
+    {
+        "OfferId": "6a427a2e38a6d33bffe9829b",
+        "TplId": "5887431f2459777e1612938f",
+        "ItemName": "7.62x54mm R LPS gzh",
+        "Price": 890,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "5734795124597738002c6176",
+                    "ItemName": "Insulating tape",
+                    "Count": 4
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false,
+        "AmmoBarterPackTplId": "65702577cfc010a0f5006a2c",
+        "PackOfferId": "153b8c53ec84eafbd9a52a29"
+    },
+    {
+        "OfferId": "6a427a2e38a6d33bffe9829d",
+        "TplId": "560d61e84bdc2da74d8b4571",
+        "ItemName": "7.62x54mm R SNB gzh",
+        "Price": 1390,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "57347c1124597737fb1379e3",
+                    "ItemName": "Duct tape",
+                    "Count": 4
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false,
+        "AmmoBarterPackTplId": "560d75f54bdc2da74d8b4573",
+        "PackOfferId": "f4c3efd544106707944d8915"
     }
 ]
