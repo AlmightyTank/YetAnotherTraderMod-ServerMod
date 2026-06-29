@@ -1,0 +1,23 @@
+﻿# build output
+bin/
+obj/
+
+# user-specific
+*.user
+*.suo
+*.cache
+*.agent
+.agent/
+
+# OS
+.DS_Store
+Thumbs.db
+/.vs
+config/items.json.report.txt
+config/tarkovdev_items_cache.json
+/dist
+tools/report_tony_western_buy_blacklist.txt
+config/tony_western_buy_blacklist.generated.json
+Properties/launchSettings.json
+/data
+tools/ids.json
