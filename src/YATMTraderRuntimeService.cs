@@ -831,7 +831,6 @@ public sealed class YATMTraderRuntimeService(
             else
             {
                 item.Upd.UnlimitedCount = false;
-                item.Upd.StackObjectsCount = 100;
 
                 if (item.Upd.BuyRestrictionMax > 0)
                 {
@@ -981,7 +980,6 @@ public sealed class YATMTraderRuntimeService(
         }
 
         SetMemberValue(upd, "UnlimitedCount", false);
-        SetMemberValue(upd, "StackObjectsCount", 100);
 
         var existingBuyRestrictionMax = GetIntMember(upd, "BuyRestrictionMax", 0);
         if (existingBuyRestrictionMax > 0)
@@ -989,7 +987,7 @@ public sealed class YATMTraderRuntimeService(
             SetMemberValue(upd, "BuyRestrictionCurrent", 0);
         }
 
-        YATMLogger.LogDebug($"[Stock] AlwaysInStock protected offer: {itemName ?? "Unknown item"} | StackObjectsCount 100");
+        YATMLogger.LogDebug($"[Stock] AlwaysInStock protected offer: {itemName ?? "Unknown item"} | StackObjectsCount preserved");
     }
 
     private PaymentRollResult RollPayments(TraderAssort assort, YATMConfig config, string rollReason)
