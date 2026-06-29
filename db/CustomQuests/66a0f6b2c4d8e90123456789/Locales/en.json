@@ -310,17 +310,17 @@
     "6a417a6c82d8dd83f87b20e1": "Survive and extract from Woods",
 
     // Quest 14
-    "6a41d30482d8dd83f87b20fa name": "Machine Oil",
-    "6a41d30482d8dd83f87b20fa description": "Clean weapons are for men with supply lines. Out here, sometimes you get a tired barrel, weak springs, bad feed lips, and a little machine oil holding the whole thing together. Factory is perfect for this lesson. No long walks. No soft angles. No time to blame the gun. Take a damaged weapon into the plant and put PMCs down with it. If it jams, clear it. If it kicks wrong, hold it tighter. If it fails, make it work anyway.",
-    "6a41d30482d8dd83f87b20fa startedMessageText": "Factory. Damaged weapon. PMC bodies. Bring me proof that bad steel still works in steady hands.",
+    "6a41d30482d8dd83f87b20fa name": "Worn Down",
+    "685000000000000000000009 description": "Clean weapons are for men with supply lines. Out here, sometimes you get a tired barrel, weak springs, bad feed lips, and a little oil holding the whole thing together. Factory is perfect for this lesson. No long walks. No soft angles. No time to blame the gun. Take a worn-down weapon into the plant and put PMCs down with it. If it jams, clear it. If it kicks wrong, hold it tighter. If it fails, make it work anyway.",
+    "685000000000000000000009 startedMessageText": "Factory. Worn-down weapon. PMC bodies. Bring me proof that bad steel still works in steady hands.",
     "6a41d30482d8dd83f87b20fa successMessageText": "Good. Now you understand something most people learn too late. A clean weapon is a comfort. A working weapon is a decision. You kept broken steel alive long enough to do the job, and that means I can trust you with gear that has already seen bad days.",
     "6a41d30482d8dd83f87b20fa failMessageText": "The weapon was rough. Factory was worse. That was the point. Bring me results, not excuses.",
     "6a41d30482d8dd83f87b20fa acceptPlayerMessage": "I'll make it work.",
     "6a41d30482d8dd83f87b20fa completePlayerMessage": "The weapon held long enough.",
     "6a41d30482d8dd83f87b20fa declinePlayerMessage": "Not testing broken steel yet.",
-    "6a41d30482d8dd83f87b20fa changeQuestMessageText": "Tony wants PMC kills on Factory with a damaged weapon.",
+    "685000000000000000000009 changeQuestMessageText": "Tony wants PMC kills on Factory with a worn-down weapon.",
     "6a41d30482d8dd83f87b20fa note": "Kill PMCs on Factory while using a damaged or low-durability weapon, then survive the raid.",
 
-    "6a41d30482d8dd83f87b20ff": "Kill 3 PMCs on Factory while using a damaged weapon",
+    "685000000000000000001015": "Kill PMCs on Factory while using a worn-down weapon",
     "6a41d30482d8dd83f87b210a": "Survive and extract from Factory"
 }
