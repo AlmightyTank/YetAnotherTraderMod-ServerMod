@@ -3571,7 +3571,7 @@
             "parentId": "hideout",
             "slotId": "hideout",
             "upd": {
-                "StackObjectsCount": 4,
+                "StackObjectsCount": 40,
                 "UnlimitedCount": false,
                 "BuyRestrictionMax": 2,
                 "BuyRestrictionCurrent": 0
@@ -3583,7 +3583,7 @@
             "parentId": "hideout",
             "slotId": "hideout",
             "upd": {
-                "StackObjectsCount": 4,
+                "StackObjectsCount": 40,
                 "UnlimitedCount": false,
                 "BuyRestrictionMax": 2,
                 "BuyRestrictionCurrent": 0
@@ -3595,7 +3595,7 @@
             "parentId": "hideout",
             "slotId": "hideout",
             "upd": {
-                "StackObjectsCount": 4,
+                "StackObjectsCount": 40,
                 "UnlimitedCount": false,
                 "BuyRestrictionMax": 2,
                 "BuyRestrictionCurrent": 0
