@@ -155,7 +155,7 @@
                     "index": 0,
                     "target": "",
                     "type": "Experience",
-                    "value": "7200"
+                    "value": 7200
                 },
                 {
                     "availableInGameEditions": [],
@@ -163,7 +163,7 @@
                     "index": 1,
                     "target": "66a0f6b2c4d8e90123456789",
                     "type": "TraderStanding",
-                    "value": "0.02"
+                    "value": 0.11
                 },
                 {
                     "availableInGameEditions": [],
@@ -181,7 +181,7 @@
                     ],
                     "target": "6a41d30482d8dd83f87b2104",
                     "type": "Item",
-                    "value": "45000"
+                    "value": 45000
                 },
                 {
                     "availableInGameEditions": [],
