@@ -43,6 +43,7 @@
     <Content Remove="db\CustomConsumables\volkov_rus_alpha.json" />
     <Content Remove="db\CustomConsumables\volkov_super_army_bandage.json" />
     <Content Remove="db\CustomConsumables\volkov_super_calok_b.json" />
+    <Content Remove="db\CustomConsumables\volkov_super_iskra.json" />
     <Content Remove="db\CustomHideoutRecipes\clean_run_sealed_cargo_package.json" />
     <Content Remove="db\CustomItems\buried_steel_crate.json" />
     <Content Remove="db\CustomItems\coded_dead_drop_tag.json" />
@@ -50,6 +51,7 @@
     <Content Remove="db\CustomItems\experimental_stim_case.json" />
     <Content Remove="db\CustomItems\forged_route_documents.json" />
     <Content Remove="db\CustomItems\sealed_cargo_package.json" />
+    <Content Remove="db\customitems\super_salad.json" />
     <Content Remove="db\CustomItems\thicc_holodilnick_thermal_bag.json" />
     <Content Remove="db\CustomItems\thicc_medicine_case.json" />
     <Content Remove="db\customitems\tony_calling_card.json" />

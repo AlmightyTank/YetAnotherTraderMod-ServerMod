@@ -3094,5 +3094,29 @@
         "AlwaysInStock": false,
         "AmmoBarterPackTplId": "560d75f54bdc2da74d8b4573",
         "PackOfferId": "f4c3efd544106707944d8915"
+    },
+    {
+        "OfferId": "6a427a2e38a6d33bffe9828f",
+        "TplId": "6a427a2e38a6d33bffe9828a",
+        "ItemName": "UNKNOWN_ITEM_6a427a2e38a6d33bffe9828a",
+        "Price": 45000,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "5d1c819a86f774771b0acd6c",
+                    "ItemName": "Weapon parts",
+                    "Count": 1
+                },
+                {
+                    "TplId": "5e2af2bc86f7746d3f3c33fc",
+                    "ItemName": "Hunting matches",
+                    "Count": 4
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
     }
 ]
