@@ -3118,5 +3118,58 @@
         ],
         "AlwaysBarter": false,
         "AlwaysInStock": false
+    },
+    {
+        "OfferId": "6a433b2caeecec851c86b80c",
+        "TplId": "5ac66cb05acfc40198510a10",
+        "ItemName": "Kalashnikov AK-101 5.56x45 assault rifle",
+        "Price": 126000,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "57347b8b24597737dd42e192",
+                    "ItemName": "Classic matches",
+                    "Count": 6
+                },
+                {
+                    "TplId": "59faf7ca86f7740dbe19f6c2",
+                    "ItemName": "Roler Submariner gold wrist watch",
+                    "Count": 1
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
+    },
+    {
+        "OfferId": "5d32cdef86f774403c15985a",
+        "TplId": "6a43472938a6d33bffe982c8",
+        "ItemName": "UNKNOWN_ITEM_6a43472938a6d33bffe982c8",
+        "Price": 146000,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "5d403f9186f7743cac3f229b",
+                    "ItemName": "Bottle of Dan Jackiel whiskey",
+                    "Count": 1
+                },
+                {
+                    "TplId": "5d0375ff86f774186372f685",
+                    "ItemName": "Military cable",
+                    "Count": 1
+                },
+                {
+                    "TplId": "5d1b2fa286f77425227d1674",
+                    "ItemName": "Electric motor",
+                    "Count": 1
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
     }
 ]
