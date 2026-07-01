@@ -35,6 +35,9 @@ Optional readable names / fallback prices:
   python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --catalog config/items.old.json
   python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --locale path/to/en.json
 
+Load custom item/locales names from your mod db/data folders so custom templates do not become UNKNOWN_ITEM_*:
+  python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --db db --db data
+
 Generate missing real barter recipes for cash-only rows, using Price as the target value:
   python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --catalog config/items.json --generate-barter-schemes cash-only
 
@@ -47,6 +50,9 @@ Force every row to cash-only while still preserving the original/generated barte
 
 Keep your current config/items.json tuning and only fill rows/settings that are missing:
   python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --keep-current-settings --generate-barter-schemes cash-only
+
+Overwrite/regenerate every field except existing BarterScheme values:
+  python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --overwrite-except-barter --current-settings config/items.json
 
 Limit repeated barter ingredients so one item does not dominate generated recipes:
   python tools/generate_items_from_assort.py --assort data/assort.json --out config/items.json --generate-barter-schemes cash-only --barter-max-uses-per-item 5
@@ -74,7 +80,7 @@ import time
 import urllib.error
 import urllib.request
 
-SCRIPT_VERSION = "2.11.0"
+SCRIPT_VERSION = "2.13.1"
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -99,6 +105,11 @@ CURRENCY_NAME_BY_TPL = {
 }
 
 TPL_BY_CURRENCY = {value: key for key, value in CURRENCY_BY_TPL.items()}
+
+# Loaded at runtime from --db folders/files. This prevents custom templates from
+# falling back to UNKNOWN_ITEM_<tpl> when their names are stored in db/customItems,
+# db/customLocales, data/customItems, or similar local JSON files.
+CUSTOM_DB_NAMES: dict[str, str] = {}
 
 # items.json row flag support. Toolset should always stay barter and still count
 # toward the random barter target. Every other row is generated with false.
@@ -1020,6 +1031,91 @@ def merge_current_settings(
     return merged_rows, warnings
 
 
+
+
+def preserve_current_barter_schemes(
+    generated_rows: list[dict[str, Any]],
+    existing_rows: list[dict[str, Any]],
+    current_settings_path: Path | None,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Overwrite/regenerate every generated field except existing BarterScheme.
+
+    Matching is OfferId-first because duplicate TplIds are allowed in trader
+    assorts. TplId fallback is only used when the generated TplId is unique.
+    """
+    warnings: list[str] = []
+
+    if not existing_rows:
+        warnings.append("--overwrite-except-barter had no existing rows to preserve; wrote fully generated output")
+        return generated_rows, warnings
+
+    existing_by_offer: dict[str, dict[str, Any]] = {}
+    existing_tpl_counts: Counter[str] = Counter()
+    existing_by_tpl: dict[str, dict[str, Any]] = {}
+
+    for existing_row in existing_rows:
+        if not isinstance(existing_row, dict):
+            continue
+
+        offer_id = get_row_offer_id(existing_row)
+        tpl_id = get_row_tpl_id(existing_row)
+        if offer_id:
+            existing_by_offer.setdefault(offer_id, existing_row)
+        if tpl_id:
+            existing_tpl_counts[tpl_id] += 1
+            existing_by_tpl.setdefault(tpl_id, existing_row)
+
+    merged_rows: list[dict[str, Any]] = []
+    preserved_barter_rows = 0
+    generated_barter_rows = 0
+    ambiguous_tpl_matches = 0
+    existing_match_without_barter = 0
+
+    for generated_row in generated_rows:
+        merged_row = copy.deepcopy(generated_row)
+        offer_id = get_row_offer_id(generated_row)
+        tpl_id = get_row_tpl_id(generated_row)
+        existing_row: dict[str, Any] | None = None
+
+        if offer_id and offer_id in existing_by_offer:
+            existing_row = existing_by_offer[offer_id]
+        elif tpl_id and existing_tpl_counts.get(tpl_id, 0) == 1:
+            existing_row = existing_by_tpl[tpl_id]
+        elif tpl_id and existing_tpl_counts.get(tpl_id, 0) > 1:
+            ambiguous_tpl_matches += 1
+
+        if existing_row is not None:
+            existing_barter_key = get_existing_key_ci(existing_row, "BarterScheme", "barterScheme", "barter_scheme")
+            if existing_barter_key is not None:
+                merged_row["BarterScheme"] = copy.deepcopy(existing_row[existing_barter_key])
+                preserved_barter_rows += 1
+            else:
+                existing_match_without_barter += 1
+                generated_barter_rows += 1
+        else:
+            generated_barter_rows += 1
+
+        merged_rows.append(merged_row)
+
+    source_text = f" from {current_settings_path}" if current_settings_path is not None else ""
+    warnings.append(
+        "--overwrite-except-barter complete"
+        f"{source_text}: preserved existing BarterScheme on {preserved_barter_rows} rows, "
+        f"used generated BarterScheme on {generated_barter_rows} rows"
+    )
+
+    if existing_match_without_barter:
+        warnings.append(
+            f"--overwrite-except-barter found {existing_match_without_barter} matching existing rows without BarterScheme; generated BarterScheme was kept for those rows"
+        )
+    if ambiguous_tpl_matches:
+        warnings.append(
+            f"--overwrite-except-barter could not TplId-match {ambiguous_tpl_matches} generated rows because that TplId appears more than once in current settings; add OfferId to preserve those barter schemes"
+        )
+
+    return merged_rows, warnings
+
+
 def load_locale_names(path: Path | None) -> dict[str, str]:
     names: dict[str, str] = {}
 
@@ -1052,6 +1148,221 @@ def load_locale_names(path: Path | None) -> dict[str, str]:
                 names[key_str] = str(nested_name)
 
     return names
+
+
+ITEM_ID_RE = re.compile(r"^[a-fA-F0-9]{24}$")
+
+
+def looks_like_item_id(value: Any) -> bool:
+    return isinstance(value, str) and ITEM_ID_RE.fullmatch(value.strip()) is not None
+
+
+def is_unknown_item_name(value: Any) -> bool:
+    return isinstance(value, str) and value.strip().startswith("UNKNOWN_ITEM_")
+
+
+def is_readable_item_name(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+
+    text = value.strip()
+    if not text:
+        return False
+
+    # Do not accidentally use ids, generated fallback names, or common internal slot names.
+    if looks_like_item_id(text):
+        return False
+    if text.startswith("UNKNOWN_ITEM_"):
+        return False
+    if text.lower() in {"hideout", "mod_equipment", "mod_scope", "mod_magazine", "mod_mount"}:
+        return False
+
+    return True
+
+
+def choose_readable_item_name(*values: Any) -> str | None:
+    for value in values:
+        if is_readable_item_name(value):
+            return str(value).strip()
+    return None
+
+
+def read_nested_locale_name(obj: dict[str, Any]) -> str | None:
+    """Read common custom-item locale shapes from WTT/CommonLib-style JSON."""
+    locale_container = get_ci(
+        obj,
+        "locales",
+        "Locales",
+        "locale",
+        "Locale",
+        "customLocales",
+        "CustomLocales",
+        "localization",
+        "Localization",
+        default=None,
+    )
+
+    if not isinstance(locale_container, dict):
+        return None
+
+    preferred_language_keys = (
+        "en",
+        "en-US",
+        "en_US",
+        "English",
+        "english",
+        "global",
+        "default",
+    )
+
+    locale_rows: list[Any] = []
+    for lang_key in preferred_language_keys:
+        lang_row = get_ci(locale_container, lang_key, default=None)
+        if lang_row is not None:
+            locale_rows.append(lang_row)
+
+    locale_rows.extend(locale_container.values())
+
+    for row in locale_rows:
+        if isinstance(row, dict):
+            name = choose_readable_item_name(
+                get_ci(row, "Name", "name", "ItemName", "itemName", default=None),
+                get_ci(row, "ShortName", "shortName", "Short", "short", default=None),
+            )
+            if name:
+                return name
+        elif is_readable_item_name(row):
+            return str(row).strip()
+
+    return None
+
+
+def read_inline_item_name(obj: dict[str, Any]) -> str | None:
+    """Read readable names directly stored on a custom item object."""
+    nested_locale_name = read_nested_locale_name(obj)
+    if nested_locale_name:
+        return nested_locale_name
+
+    return choose_readable_item_name(
+        get_ci(obj, "ItemName", "itemName", "Name", "name", "DisplayName", "displayName", default=None),
+        get_ci(obj, "ShortName", "shortName", "Short", "short", default=None),
+    )
+
+
+def add_db_name(names: dict[str, str], tpl: str, item_name: str) -> bool:
+    tpl = str(tpl or "").strip()
+    if not looks_like_item_id(tpl) or not is_readable_item_name(item_name):
+        return False
+
+    # Prefer the first real full name found. Locale/customItems files scanned earlier
+    # should not be overwritten by later incidental matches.
+    names.setdefault(tpl, str(item_name).strip())
+    return True
+
+
+def scan_db_names_from_json_value(value: Any, names: dict[str, str], current_key: str | None = None) -> None:
+    """Recursively scan local db/data JSON for custom item names and locale rows."""
+    if isinstance(value, dict):
+        # Locale shape: "<tpl> Name": "Readable name" or "<tpl> ShortName": "Short".
+        for raw_key, raw_value in value.items():
+            key = str(raw_key)
+            if key.endswith(" Name"):
+                add_db_name(names, key[:-5], str(raw_value))
+            elif key.endswith(" ShortName"):
+                tpl = key[:-10]
+                if tpl not in names:
+                    add_db_name(names, tpl, str(raw_value))
+            elif key.endswith(" Short Name"):
+                tpl = key[:-11]
+                if tpl not in names:
+                    add_db_name(names, tpl, str(raw_value))
+
+        possible_ids = [
+            current_key,
+            get_ci(value, "id", "Id", "_id", "TplId", "tplId", "TemplateId", "templateId", default=None),
+        ]
+        item_name = read_inline_item_name(value)
+        if item_name:
+            for possible_id in possible_ids:
+                if looks_like_item_id(possible_id):
+                    add_db_name(names, str(possible_id), item_name)
+
+        for raw_key, child in value.items():
+            scan_db_names_from_json_value(child, names, current_key=str(raw_key))
+        return
+
+    if isinstance(value, list):
+        for child in value:
+            scan_db_names_from_json_value(child, names, current_key=current_key)
+
+
+def iter_db_json_files(paths: list[Path]) -> list[Path]:
+    json_files: list[Path] = []
+    seen: set[Path] = set()
+
+    for raw_path in paths:
+        path = raw_path.expanduser()
+        if not path.exists():
+            continue
+
+        if path.is_file() and path.suffix.lower() == ".json":
+            candidates = [path]
+        elif path.is_dir():
+            candidates = sorted(path.rglob("*.json"))
+        else:
+            candidates = []
+
+        for candidate in candidates:
+            resolved = candidate.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            json_files.append(candidate)
+
+    return json_files
+
+
+def load_db_item_names(paths: list[Path], enabled: bool = True) -> tuple[dict[str, str], list[str]]:
+    """Load custom item names from local db/data JSON files.
+
+    This is deliberately tolerant because Tony/WTT/CommonLib files can be shaped as:
+    - {"<tpl>": {"locales": {"en": {"name": "..."}}}}
+    - {"<tpl> Name": "Readable name"}
+    - [{"id": "<tpl>", "name": "Readable name"}]
+    """
+    warnings: list[str] = []
+    names: dict[str, str] = {}
+
+    if not enabled:
+        warnings.append("db custom item name lookup disabled")
+        return names, warnings
+
+    existing_paths = [path for path in paths if path.expanduser().exists()]
+    if not existing_paths:
+        return names, warnings
+
+    json_files = iter_db_json_files(existing_paths)
+    unreadable_count = 0
+
+    for json_file in json_files:
+        try:
+            data = load_json(json_file)
+        except Exception:
+            unreadable_count += 1
+            continue
+
+        before_count = len(names)
+        scan_db_names_from_json_value(data, names)
+        added_count = len(names) - before_count
+        if added_count:
+            warnings.append(f"Loaded {added_count} custom item names from {json_file}")
+
+    if json_files:
+        warnings.append(f"Scanned {len(json_files)} local db/data JSON files for custom item names")
+    if unreadable_count:
+        warnings.append(f"Skipped {unreadable_count} unreadable local db/data JSON files while loading custom item names")
+
+    return names, warnings
 
 
 def load_tarkov_dev_cache(cache_path: Path, max_age_seconds: int) -> tuple[dict[str, str], dict[str, float], list[str]]:
@@ -1246,19 +1557,106 @@ def resolve_name(
     locale_names: dict[str, str],
     catalog_names: dict[str, str],
 ) -> str:
+    tpl = str(tpl or "").strip()
     if tpl in CURRENCY_NAME_BY_TPL:
         return CURRENCY_NAME_BY_TPL[tpl]
-    if tpl in tarkov_dev_names:
-        return tarkov_dev_names[tpl]
-    if tpl in locale_names:
-        return locale_names[tpl]
-    if tpl in catalog_names:
-        return catalog_names[tpl]
-    if tpl in BARTER_POOL_NAME_BY_TPL:
-        return BARTER_POOL_NAME_BY_TPL[tpl]
-    if tpl in BUILT_IN_NAMES:
-        return BUILT_IN_NAMES[tpl]
+
+    # Only accept real readable names from each source. This prevents an old
+    # config/items.json catalog entry like UNKNOWN_ITEM_<tpl> from blocking a
+    # better name found in the local custom db/data scan.
+    for source in (tarkov_dev_names, locale_names, catalog_names, CUSTOM_DB_NAMES):
+        name = source.get(tpl) if isinstance(source, dict) else None
+        if is_readable_item_name(name):
+            return str(name).strip()
+
+    # Generated barter pool and built-ins are safe fallback readability sources.
+    if is_readable_item_name(BARTER_POOL_NAME_BY_TPL.get(tpl)):
+        return str(BARTER_POOL_NAME_BY_TPL[tpl]).strip()
+    if is_readable_item_name(BUILT_IN_NAMES.get(tpl)):
+        return str(BUILT_IN_NAMES[tpl]).strip()
+
     return f"UNKNOWN_ITEM_{tpl}"
+
+
+def resolve_known_name(
+    tpl: str,
+    tarkov_dev_names: dict[str, str],
+    locale_names: dict[str, str],
+    catalog_names: dict[str, str],
+) -> str | None:
+    name = resolve_name(tpl, tarkov_dev_names, locale_names, catalog_names)
+    return name if is_readable_item_name(name) else None
+
+
+def refresh_unknown_item_names_in_barter_scheme(
+    scheme: Any,
+    tarkov_dev_names: dict[str, str],
+    locale_names: dict[str, str],
+    catalog_names: dict[str, str],
+) -> int:
+    """Replace UNKNOWN/missing ItemName fields inside a preserved BarterScheme.
+
+    This keeps the barter recipe itself intact: TplId and Count are not changed.
+    Only the human-readable ItemName field is refreshed.
+    """
+    changed_count = 0
+
+    if not isinstance(scheme, list):
+        return changed_count
+
+    for option in scheme:
+        if not isinstance(option, list):
+            continue
+        for payment in option:
+            if not isinstance(payment, dict):
+                continue
+
+            payment_tpl = str(get_ci(payment, "TplId", "tplId", "_tpl", "Template", "TemplateId", default="") or "").strip()
+            if not payment_tpl:
+                continue
+
+            item_name_key = get_existing_key_ci(payment, "ItemName", "itemName", "Name", "name") or "ItemName"
+            current_name = payment.get(item_name_key)
+            if is_readable_item_name(current_name):
+                continue
+
+            resolved_name = resolve_known_name(payment_tpl, tarkov_dev_names, locale_names, catalog_names)
+            if resolved_name:
+                payment[item_name_key] = resolved_name
+                changed_count += 1
+
+    return changed_count
+
+
+def refresh_unknown_item_names_in_rows(
+    rows: list[dict[str, Any]],
+    tarkov_dev_names: dict[str, str],
+    locale_names: dict[str, str],
+    catalog_names: dict[str, str],
+) -> int:
+    """Refresh UNKNOWN_ITEM_* names from db/locale/catalog without changing barters."""
+    changed_count = 0
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+
+        tpl_id = get_row_tpl_id(row)
+        current_name = row.get("ItemName")
+        if tpl_id and not is_readable_item_name(current_name):
+            resolved_name = resolve_known_name(tpl_id, tarkov_dev_names, locale_names, catalog_names)
+            if resolved_name:
+                row["ItemName"] = resolved_name
+                changed_count += 1
+
+        changed_count += refresh_unknown_item_names_in_barter_scheme(
+            row.get("BarterScheme"),
+            tarkov_dev_names,
+            locale_names,
+            catalog_names,
+        )
+
+    return changed_count
 
 
 def normalize_barter_scheme(
@@ -2437,9 +2835,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", default="config/items.json", help="Path to write generated items.json")
     parser.add_argument("--catalog", default=None, help="Optional existing items.json/list used for readable names and fallback prices")
     parser.add_argument("--locale", default=None, help="Optional SPT English locale JSON used for readable item names")
+    parser.add_argument("--db", action="append", default=None, help="Local db/data folder or JSON file to scan for custom item names. Can be repeated. Defaults to db and data when present")
+    parser.add_argument("--no-db-names", action="store_true", help="Do not scan local db/data JSON files for custom item names")
     parser.add_argument("--report", default=None, help="Optional report output path. Defaults to <out>.report.txt")
     parser.add_argument("--keep-current-settings", "--fill-missing-only", action="store_true", help="Preserve existing items.json rows/settings and only fill missing fields or append missing assort rows")
-    parser.add_argument("--current-settings", default=None, help="Optional existing items.json path used by --keep-current-settings. Defaults to --catalog when provided, otherwise --out")
+    parser.add_argument("--overwrite-except-barter", "--preserve-current-barter", action="store_true", help="Regenerate every items.json field from assort/db, but preserve existing BarterScheme values from --current-settings")
+    parser.add_argument("--current-settings", default=None, help="Optional existing items.json path used by --keep-current-settings or --overwrite-except-barter. Defaults to --catalog when provided, otherwise --out")
     parser.add_argument("--cash-only", action="store_true", help="Deprecated: items.json rows are now always generated with CashOnly=true while preserving BarterScheme for runtime randomization")
     parser.add_argument("--default-price", type=float, default=0.0, help="Fallback RUB price for barter-only rows with no catalog/tarkov.dev price")
     parser.add_argument(
@@ -2492,9 +2893,19 @@ def main() -> int:
 
     catalog_names, catalog_prices = load_name_and_price_catalog(catalog_path)
     locale_names = load_locale_names(locale_path)
+    db_name_paths = [Path(path) for path in (args.db or ["db", "data"])]
+    db_names, db_name_warnings = load_db_item_names(
+        db_name_paths,
+        enabled=not bool(args.no_db_names),
+    )
+    CUSTOM_DB_NAMES.clear()
+    CUSTOM_DB_NAMES.update(db_names)
     existing_item_settings: list[dict[str, Any]] = []
     current_settings_warnings: list[str] = []
-    if args.keep_current_settings:
+    if args.keep_current_settings and args.overwrite_except_barter:
+        raise ValueError("Use either --keep-current-settings or --overwrite-except-barter, not both")
+
+    if args.keep_current_settings or args.overwrite_except_barter:
         existing_item_settings, current_settings_warnings = load_existing_item_settings(current_settings_path)
 
     custom_ammo_map_path = Path(args.custom_ammo_pack_map) if args.custom_ammo_pack_map else None
@@ -2539,6 +2950,25 @@ def main() -> int:
         )
         warnings.extend(merge_warnings)
 
+    if args.overwrite_except_barter:
+        output, preserve_warnings = preserve_current_barter_schemes(
+            generated_rows=output,
+            existing_rows=existing_item_settings,
+            current_settings_path=current_settings_path,
+        )
+        warnings.extend(preserve_warnings)
+
+    refreshed_unknown_name_count = refresh_unknown_item_names_in_rows(
+        rows=output,
+        tarkov_dev_names=tarkov_dev_names,
+        locale_names=locale_names,
+        catalog_names=catalog_names,
+    )
+    if refreshed_unknown_name_count:
+        warnings.append(
+            f"Refreshed {refreshed_unknown_name_count} UNKNOWN/missing ItemName values from locale/catalog/db name sources"
+        )
+
     final_barter_max_uses_per_item = max(0, int(args.barter_max_uses_per_item or 0))
     if final_barter_max_uses_per_item > 0:
         final_usage_counts = count_barter_ingredient_usage_from_rows(output)
@@ -2572,7 +3002,7 @@ def main() -> int:
 
     output = order_items_rows(output)
 
-    warnings = tarkov_dev_warnings + current_settings_warnings + custom_ammo_warnings + warnings
+    warnings = tarkov_dev_warnings + db_name_warnings + current_settings_warnings + custom_ammo_warnings + warnings
 
     if assort_modified:
         assort_out_path.parent.mkdir(parents=True, exist_ok=True)
