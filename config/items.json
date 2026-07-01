@@ -1172,30 +1172,6 @@
         "AlwaysInStock": false
     },
     {
-        "OfferId": "6a300025d2999bc7b9bba95e",
-        "TplId": "5448fee04bdc2dbc018b4567",
-        "ItemName": "Bottle of water (0.6L)",
-        "Price": 11000,
-        "Currency": "RUB",
-        "CashOnly": true,
-        "BarterScheme": [
-            [
-                {
-                    "TplId": "590c2d8786f774245b1f03f3",
-                    "ItemName": "Screwdriver",
-                    "Count": 1
-                },
-                {
-                    "TplId": "57347b8b24597737dd42e192",
-                    "ItemName": "Classic matches",
-                    "Count": 1
-                }
-            ]
-        ],
-        "AlwaysBarter": false,
-        "AlwaysInStock": false
-    },
-    {
         "OfferId": "6a2a2501339aae85cffe58d2",
         "TplId": "5e8488fa988a8701445df1e4",
         "ItemName": "CALOK-B hemostatic applicator",
@@ -3009,6 +2985,30 @@
                 {
                     "TplId": "5751435d24597720a27126d1",
                     "ItemName": "Can of Max Energy energy drink",
+                    "Count": 1
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
+    },
+    {
+        "OfferId": "6a300025d2999bc7b9bba95e",
+        "TplId": "6a43f00638a6d33bffe98315",
+        "ItemName": "Volkov Razliv mineral water",
+        "Price": 14000,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "590c2d8786f774245b1f03f3",
+                    "ItemName": "Screwdriver",
+                    "Count": 1
+                },
+                {
+                    "TplId": "57347b8b24597737dd42e192",
+                    "ItemName": "Classic matches",
                     "Count": 1
                 }
             ]
