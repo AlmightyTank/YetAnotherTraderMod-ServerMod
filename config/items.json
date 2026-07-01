@@ -976,25 +976,6 @@
         "AlwaysInStock": false
     },
     {
-        "OfferId": "6a3007dfd2999bc7b9bba970",
-        "TplId": "544fb37f4bdc2dee738b4567",
-        "ItemName": "Analgin painkillers",
-        "Price": 6200,
-        "Currency": "RUB",
-        "CashOnly": true,
-        "BarterScheme": [
-            [
-                {
-                    "TplId": "5672cb124bdc2d1a0f8b4568",
-                    "ItemName": "AA Battery",
-                    "Count": 1
-                }
-            ]
-        ],
-        "AlwaysBarter": false,
-        "AlwaysInStock": false
-    },
-    {
         "OfferId": "6a3007dfd2999bc7b9bba96d",
         "TplId": "5751a25924597722c463c472",
         "ItemName": "Army bandage",
@@ -1299,6 +1280,25 @@
                     "TplId": "590c651286f7741e566b6461",
                     "ItemName": "Slim diary",
                     "Count": 1
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
+    },
+    {
+        "OfferId": "6a44f6f738a6d33bffe98316",
+        "TplId": "6a43f02138a6d33bffe98331",
+        "ItemName": "Dolmet-F field analgesic tablets",
+        "Price": 14500,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "5449016a4bdc2d6f028b456f",
+                    "ItemName": "Roubles",
+                    "Count": 14500
                 }
             ]
         ],
@@ -1761,6 +1761,25 @@
         "AlwaysInStock": false
     },
     {
+        "OfferId": "6a44f6f738a6d33bffe98317",
+        "TplId": "6a43f02238a6d33bffe98332",
+        "ItemName": "Medvedol 650 mg tablets",
+        "Price": 28500,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "5449016a4bdc2d6f028b456f",
+                    "ItemName": "Roubles",
+                    "Count": 28500
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
+    },
+    {
         "OfferId": "6a300025d2999bc7b9bba959",
         "TplId": "5de652c31b7e3716273428be",
         "ItemName": "Molot Arms VPO-215 Gornostay .366 TKM bolt-action rifle",
@@ -1845,6 +1864,25 @@
                     "TplId": "5e2af29386f7746d4159f077",
                     "ItemName": "KEKTAPE duct tape",
                     "Count": 5
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
+    },
+    {
+        "OfferId": "6a44f6f738a6d33bffe98318",
+        "TplId": "6a43f02338a6d33bffe98333",
+        "ItemName": "Noctapyrin focus tablets",
+        "Price": 32000,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "5449016a4bdc2d6f028b456f",
+                    "ItemName": "Roubles",
+                    "Count": 32000
                 }
             ]
         ],
@@ -2750,6 +2788,25 @@
         "AlwaysInStock": false
     },
     {
+        "OfferId": "6a3007dfd2999bc7b9bba970",
+        "TplId": "6a43f02038a6d33bffe98330",
+        "ItemName": "Volkarin 500 mg analgesic tablets",
+        "Price": 6500,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "5672cb124bdc2d1a0f8b4568",
+                    "ItemName": "AA Battery",
+                    "Count": 1
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false
+    },
+    {
         "OfferId": "6a447e1638a6d33bffe98308",
         "TplId": "683288b7a174cfedb52ab42e",
         "ItemName": "Volkov Alyonka cocoa thermos",
@@ -2996,7 +3053,7 @@
         "OfferId": "6a300025d2999bc7b9bba95e",
         "TplId": "6a43f00638a6d33bffe98315",
         "ItemName": "Volkov Razliv mineral water",
-        "Price": 14000,
+        "Price": 11000,
         "Currency": "RUB",
         "CashOnly": true,
         "BarterScheme": [
