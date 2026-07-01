@@ -3998,7 +3998,6 @@
             "slotId": "mod_scope"
         },
         {
-
             "_id": "5d32cdef86f774403c15985a",
             "_tpl": "6a43472938a6d33bffe982c8",
             "parentId": "hideout",
@@ -4234,6 +4233,30 @@
                 "StackObjectsCount": 30,
                 "UnlimitedCount": false,
                 "BuyRestrictionMax": 2,
+                "BuyRestrictionCurrent": 0
+            }
+        },
+        {
+            "_id": "bc866c61bea0d584d4ae4de1",
+            "_tpl": "5cadf6eeae921500134b2799",
+            "parentId": "hideout",
+            "slotId": "hideout",
+            "upd": {
+                "StackObjectsCount": 360,
+                "UnlimitedCount": false,
+                "BuyRestrictionMax": 120,
+                "BuyRestrictionCurrent": 0
+            }
+        },
+        {
+            "_id": "f2db56fac2706c82ab6634e8",
+            "_tpl": "648983d6b5a2df1c815a04ec",
+            "parentId": "hideout",
+            "slotId": "hideout",
+            "upd": {
+                "StackObjectsCount": 30,
+                "UnlimitedCount": false,
+                "BuyRestrictionMax": 12,
                 "BuyRestrictionCurrent": 0
             }
         }
@@ -5798,6 +5821,30 @@
                     "_tpl": "5449016a4bdc2d6f028b456f"
                 }
             ]
+        ],
+        "bc866c61bea0d584d4ae4de1": [
+            [
+                {
+                    "count": 1200,
+                    "_tpl": "5449016a4bdc2d6f028b456f"
+                }
+            ]
+        ],
+        "f2db56fac2706c82ab6634e8": [
+            [
+                {
+                    "count": 1200,
+                    "_tpl": "5449016a4bdc2d6f028b456f"
+                }
+            ]
+        ],
+        "1126f676c9a82a88e9f5ff60": [
+            [
+                {
+                    "count": 1,
+                    "_tpl": "575062b524597720a31c09a1"
+                }
+            ]
         ]
     },
     "loyal_level_items": {
@@ -5980,6 +6027,8 @@
         "6a447e1638a6d33bffe98306": 2,
         "6a447e1638a6d33bffe98307": 3,
         "6a447e1638a6d33bffe98308": 3,
-        "6a447e1638a6d33bffe98309": 3
+        "6a447e1638a6d33bffe98309": 3,
+        "bc866c61bea0d584d4ae4de1": 3,
+        "f2db56fac2706c82ab6634e8": 3
     }
 }

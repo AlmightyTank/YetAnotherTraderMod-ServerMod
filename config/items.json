@@ -42,6 +42,27 @@
         "PackOfferId": "6b2014edfd3149d18e8646b8"
     },
     {
+        "OfferId": "bc866c61bea0d584d4ae4de1",
+        "TplId": "5cadf6eeae921500134b2799",
+        "ItemName": "12.7x55mm PS12B",
+        "Price": 1000,
+        "Currency": "RUB",
+        "CashOnly": true,
+        "BarterScheme": [
+            [
+                {
+                    "TplId": "573476d324597737da2adc13",
+                    "ItemName": "Malboro",
+                    "Count": 2
+                }
+            ]
+        ],
+        "AlwaysBarter": false,
+        "AlwaysInStock": false,
+        "AmmoBarterPackTplId": "6570241bcfc010a0f50069f5",
+        "PackOfferId": "f2db56fac2706c82ab6634e8"
+    },
+    {
         "OfferId": "6a300025d2999bc7b9bba961",
         "TplId": "560d5e524bdc2d25448b4571",
         "ItemName": "12/70 7mm buckshot",
