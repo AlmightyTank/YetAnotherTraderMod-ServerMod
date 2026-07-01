@@ -322,5 +322,24 @@
     "6a41d30482d8dd83f87b20fa note": "Kill PMCs on Factory while using a damaged or low-durability weapon, then survive the raid.",
 
     "6a41d30482d8dd83f87b20ff": "Kill PMCs on Factory while using a worn-down weapon",
-    "6a41d30482d8dd83f87b210a": "Survive and extract from Factory"
+    "6a41d30482d8dd83f87b210a": "Survive and extract from Factory",
+
+    // Quest 15
+    "6a4341ac38a6d33bffe9829e name": "Foreign Parts",
+    "6a4341ac38a6d33bffe9829e description": "The coast is full of clean rifles, clean plates, and clean lies. Rogues move Western parts through Lighthouse like the beach belongs to them. It does not. I want material and I want proof. Bring me Western weapons, bring me Rogue kit, mark the beach shipment, and pull the shipment records from the lower-floor bunk room in Warehouse 3. My boys will handle the heavy cargo after you leave.",
+    "6a4341ac38a6d33bffe9829e note": "Tony wants Western weapons, Rogue tactical gear, a beach shipment marked, and shipment evidence recovered from Warehouse 3.",
+    "6a4341ac38a6d33bffe9829e startedMessageText": "Lighthouse. Strip the foreign gear, mark the beach shipment, and pull the paperwork from Warehouse 3.",
+    "6a4341ac38a6d33bffe9829e successMessageText": "Good. Foreign parts, foreign lies, same old greed. Now I know what they are moving, where it touches the beach, and what can be pulled apart for my own shelves.",
+    "6a4341ac38a6d33bffe9829e failMessageText": "You missed the shipment, lost the evidence, or came back without material. The coast does not get quieter because you tried.",
+    "6a4341ac38a6d33bffe9829e acceptPlayerMessage": "I'll hit the Rogue supply line.",
+    "6a4341ac38a6d33bffe9829e declinePlayerMessage": "Not touching Rogue freight yet.",
+    "6a4341ac38a6d33bffe9829e completePlayerMessage": "I brought the gear and the evidence.",
+    "6a4341ac38a6d33bffe9829e changeQuestMessageText": "Tony wants Rogue supply gear and shipment evidence from Lighthouse.",
+
+    "6a4341ac38a6d33bffe9829f": "Find in raid and hand over 2 Western weapons",
+    "6a4341ac38a6d33bffe982a0": "Find in raid and hand over 3 pieces of Rogue tactical gear",
+    "6a4341ac38a6d33bffe982a1": "Mark the Rogue shipment on the beach for Tony's crew",
+    "6a4341ac38a6d33bffe982a2": "Recover the Rogue shipment evidence from the Warehouse 3 lower floor bunk room",
+    "6a4341ac38a6d33bffe982a6": "Survive and extract from Lighthouse",
+    "6a4341ac38a6d33bffe982a7": "Hand over the shipment evidence"
 }
