@@ -1,8 +1,8 @@
 {
     "cloneOrigin": "60098b1705871270cd5352a1",
     "id": "683288f7ce990770ae25d0e6",
-    "fleaPrice": 60000,
-    "handBookPrice": 60000,
+    "fleaPrice": 1.6,
+    "handBookPrice": 1.6,
     "includeInSameQuestsAsOrigin": false,
     "addSpawnsInSamePlacesAsOrigin": true,
     "spawnWeightComparedToOrigin": 0.25,
@@ -62,13 +62,6 @@
             "shortName": "Zaryad",
             "description": "A squeezable vitamin drink pouch from Tony's backroom supply crates. Fruit syrup, caffeine, dissolved tablets, and just enough vitamins to make the label sound legal. Drink it fast and keep moving."
         }
-    },
-
-    "trader": {
-        "traderId": "66a0f6b2c4d8e90123456789",
-        "loyaltyReq": 2,
-        "price": 42000,
-        "amountForSale": 8
     },
 
     "craft": {
