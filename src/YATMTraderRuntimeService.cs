@@ -59,9 +59,15 @@ public sealed class YATMTraderRuntimeService(
 
     private sealed record RollCandidate(string OfferId, string RollKey);
 
+    private sealed record AmmoPackBarterOfferLimitsData(
+        PriceConfigItem PriceConfig,
+        int LooseBuyRestrictionMax,
+        int PackSize,
+        int PackBuyRestrictionMax);
+
     private sealed class PaymentRollResult
     {
-        public Dictionary<string, PriceConfigItem> AmmoPackBarterOffersById { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, AmmoPackBarterOfferLimitsData> AmmoPackBarterOffersById { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         // Filled by the completed payment roll. The stock roll can use this
         // to prevent barter offers from becoming out of stock when the setting is enabled.
@@ -778,9 +784,9 @@ public sealed class YATMTraderRuntimeService(
 
             // Ammo offers that rolled into barter were already switched to the pack tpl
             // during the completed payment pass. The stock pass only applies pack stock limits.
-            if (paymentRollResult.AmmoPackBarterOffersById.TryGetValue(item.Id, out var selectedAmmoPackPriceConfig))
+            if (paymentRollResult.AmmoPackBarterOffersById.TryGetValue(item.Id, out var selectedAmmoPackLimitsData))
             {
-                ApplyAmmoPackBarterOfferLimits(item, selectedAmmoPackPriceConfig);
+                ApplyAmmoPackBarterOfferLimits(item, selectedAmmoPackLimitsData);
                 modifiedCount++;
                 continue;
             }
@@ -1168,7 +1174,8 @@ public sealed class YATMTraderRuntimeService(
 
             if (appliedAmmoPackBarter && !string.IsNullOrWhiteSpace(appliedAmmoPackOfferId))
             {
-                paymentRollResult.AmmoPackBarterOffersById[appliedAmmoPackOfferId] = configuredOffer.PriceConfig;
+                paymentRollResult.AmmoPackBarterOffersById[appliedAmmoPackOfferId] =
+                    BuildAmmoPackBarterOfferLimitsData(configuredOffer.Offer, configuredOffer.PriceConfig);
             }
 
             var appliedBarterOfferId = !string.IsNullOrWhiteSpace(appliedAmmoPackOfferId)
@@ -1495,8 +1502,28 @@ public sealed class YATMTraderRuntimeService(
         }
     }
 
-    private static void ApplyAmmoPackBarterOfferLimits(object offer, PriceConfigItem priceConfig)
+    private static AmmoPackBarterOfferLimitsData BuildAmmoPackBarterOfferLimitsData(object looseOffer, PriceConfigItem priceConfig)
     {
+        var looseUpd = GetMemberValue(looseOffer, "Upd");
+        var looseBuyRestrictionMax = looseUpd != null
+            ? GetIntMember(looseUpd, "BuyRestrictionMax", 0)
+            : 0;
+
+        // AmmoBarterPackSize comes from items.json. Example:
+        // loose BuyRestrictionMax 1200 / pack size 120 = 10 barter packs.
+        var packSize = GetIntMember(priceConfig, "AmmoBarterPackSize", 0);
+        var packBuyRestrictionMax = GetAmmoPackBuyRestrictionMax(priceConfig, looseBuyRestrictionMax, packSize);
+
+        return new AmmoPackBarterOfferLimitsData(
+            priceConfig,
+            looseBuyRestrictionMax,
+            packSize,
+            packBuyRestrictionMax);
+    }
+
+    private static void ApplyAmmoPackBarterOfferLimits(object offer, AmmoPackBarterOfferLimitsData limitsData)
+    {
+        var priceConfig = limitsData.PriceConfig;
         var upd = GetMemberValue(offer, "Upd");
         if (upd == null)
         {
@@ -1504,23 +1531,32 @@ public sealed class YATMTraderRuntimeService(
             return;
         }
 
-        var buyRestrictionMax = GetAmmoPackBuyRestrictionMax(priceConfig);
+        var buyRestrictionMax = Math.Max(1, limitsData.PackBuyRestrictionMax);
 
         SetMemberValue(upd, "UnlimitedCount", false);
-        SetMemberValue(upd, "StackObjectsCount", 10);
+        SetMemberValue(upd, "StackObjectsCount", buyRestrictionMax);
         SetMemberValue(upd, "BuyRestrictionMax", buyRestrictionMax);
         SetMemberValue(upd, "BuyRestrictionCurrent", 0);
 
-        YATMLogger.LogRealDebug($"[Pricing] Ammo pack barter stock: {priceConfig.ItemName ?? "Unknown item"} | StackObjectsCount 10 | BuyRestrictionMax {buyRestrictionMax}");
+        YATMLogger.LogRealDebug(
+            $"[Pricing] Ammo pack barter stock: {priceConfig.ItemName ?? "Unknown item"} | " +
+            $"LooseBuyRestrictionMax {limitsData.LooseBuyRestrictionMax} | PackSize {limitsData.PackSize} | " +
+            $"StackObjectsCount {buyRestrictionMax} | BuyRestrictionMax {buyRestrictionMax}");
     }
 
-    private static bool IsAmmoPackCapableConfig(PriceConfigItem priceConfig)
+    private static int GetAmmoPackBuyRestrictionMax(PriceConfigItem priceConfig, int looseBuyRestrictionMax, int packSize)
     {
-        return !string.IsNullOrWhiteSpace(GetStringMember(priceConfig, "AmmoBarterPackTplId"));
+        if (looseBuyRestrictionMax > 0 && packSize > 0)
+        {
+            return Math.Max(1, looseBuyRestrictionMax / packSize);
+        }
+
+        // Fallback keeps old behavior if an items.json row is missing AmmoBarterPackSize
+        // or the loose offer has no BuyRestrictionMax.
+        return GetLegacyAmmoPackBuyRestrictionMax(priceConfig);
     }
 
-
-    private static int GetAmmoPackBuyRestrictionMax(PriceConfigItem priceConfig)
+    private static int GetLegacyAmmoPackBuyRestrictionMax(PriceConfigItem priceConfig)
     {
         // Use the actual ammo pack tpl from items.json.
         // This is the tpl that the live assort root item is changed to when ammo rolls barter.
@@ -1565,7 +1601,10 @@ public sealed class YATMTraderRuntimeService(
             "6489854673c462723909a14e",
 
             // 9x39mm SP-6 ammo pack (20 pcs)
-            "657025dabfc87b3a34093256"
+            "657025dabfc87b3a34093256",
+
+            // 12.7x55mm PS12B ammo pack (10 pcs)
+            "648983d6b5a2df1c815a04ec"
         );
     }
 
