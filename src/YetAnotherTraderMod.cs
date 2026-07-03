@@ -20,7 +20,7 @@ namespace YetAnotherTraderMod.src;
 
 public record ModMetadata : AbstractModMetadata
 {
-    public override string ModGuid { get; init; } = "com.amightytank.yetanothertradermod";
+    public override string ModGuid { get; init; } = "com.amightytank.yatm";
     public override string Name { get; init; } = "YetAnotherTraderMod";
     public override string Author { get; init; } = "AMightyTank | Based on PrisciluOrigins by Reis/Anigx";
     public override List<string>? Contributors { get; init; } = ["Reis", "Anigx"];
