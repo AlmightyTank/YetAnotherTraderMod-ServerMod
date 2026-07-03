@@ -7,6 +7,7 @@ using System.Text.Json;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Servers;
 using YetAnotherTraderMod.src;
+using YetAnotherTraderMod.src.Models;
 using Path = System.IO.Path;
 
 namespace YetAnotherTraderMod.config;
@@ -106,6 +107,7 @@ public class YATMConfig
         }
 
         LoadOrGenerateSettings(baseJson);
+        YATMRuntimeConfig.Set(Settings);
         LoadOrGeneratePrices(assortJson);
     }
 
