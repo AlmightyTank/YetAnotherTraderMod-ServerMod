@@ -22,34 +22,58 @@
     <PackageReference Include="SPTarkov.Server.Core" Version="4.0.13" />
 	<PackageReference Include="WTT-ServerCommonLib" Version="2.0.20" />
   </ItemGroup>
-	<ItemGroup>
-		<None Include="config\items.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
+    <ItemGroup>
+	    <Reference Include="MoreBotsServer">
+		    <Private>false</Private>
+		    <HintPath>C:\RealSPT\SPT\user\mods\MoreBotsServer\MoreBotsServer.dll</HintPath>
+	    </Reference>
+    </ItemGroup>
+    <ItemGroup>
+	    <None Include="config\items.json">
+		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    </None>
 
-		<None Include="config\settings.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
+	    <None Include="config\settings.json">
+		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    </None>
 		
-		<None Include="db\**\*.*" Exclude="db\**\*.cs">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
+	    <None Include="db\**\*.*" Exclude="db\**\*.cs">
+		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    </None>
+    </ItemGroup>
   <ItemGroup>
+    <Content Remove="db\CustomConsumables\dolmet_f_field_tablets.json" />
+    <Content Remove="db\CustomConsumables\medvedol_650mg_tablets.json" />
+    <Content Remove="db\CustomConsumables\noctapyrin_focus_tablets.json" />
+    <Content Remove="db\CustomConsumables\volkarin_500mg_tablets.json" />
+    <Content Remove="db\CustomConsumables\volkov_cocoa_thermos.json" />
+    <Content Remove="db\CustomConsumables\volkov_cooked_green_peas.json" />
+    <Content Remove="db\CustomConsumables\volkov_cooked_herring.json" />
+    <Content Remove="db\CustomConsumables\volkov_cooked_pacific_saury.json" />
+    <Content Remove="db\CustomConsumables\volkov_cooked_sprats.json" />
+    <Content Remove="db\CustomConsumables\volkov_cooked_squash_spread.json" />
+    <Content Remove="db\CustomConsumables\volkov_cooked_tushonka_large.json" />
+    <Content Remove="db\CustomConsumables\volkov_cooked_tushonka_small.json" />
     <Content Remove="db\customconsumables\volkov_field_stabilizer.json" />
     <Content Remove="db\CustomConsumables\volkov_ghost_9.json" />
     <Content Remove="db\customconsumables\volkov_mule_lite.json" />
     <Content Remove="db\customconsumables\volkov_nerve_igniter.json" />
+    <Content Remove="db\CustomConsumables\volkov_razliv_mineral_water.json" />
     <Content Remove="db\CustomConsumables\volkov_rus_alpha.json" />
     <Content Remove="db\CustomConsumables\volkov_super_army_bandage.json" />
     <Content Remove="db\CustomConsumables\volkov_super_calok_b.json" />
     <Content Remove="db\CustomConsumables\volkov_super_iskra.json" />
+    <Content Remove="db\CustomConsumables\volkov_warm_milk_thermos.json" />
+    <Content Remove="db\customconsumables\volkov_zaryad_vitamin_pouch.json" />
+    <Content Remove="db\CustomConsumables\volkov_zarya_energy_drink.json" />
     <Content Remove="db\CustomHideoutRecipes\clean_run_sealed_cargo_package.json" />
+    <Content Remove="db\CustomItems\altyn_with_headphones.json" />
     <Content Remove="db\CustomItems\buried_steel_crate.json" />
     <Content Remove="db\CustomItems\coded_dead_drop_tag.json" />
     <Content Remove="db\customitems\dead-drop_package.json" />
     <Content Remove="db\CustomItems\experimental_stim_case.json" />
     <Content Remove="db\CustomItems\forged_route_documents.json" />
+    <Content Remove="db\CustomItems\rogue_shipment_evidence.json" />
     <Content Remove="db\CustomItems\sealed_cargo_package.json" />
     <Content Remove="db\customitems\super_salad.json" />
     <Content Remove="db\CustomItems\thicc_holodilnick_thermal_bag.json" />
@@ -58,10 +82,15 @@
     <Content Remove="db\CustomItems\tony_quest_items.json" />
     <Content Remove="db\customitems\trauma_bag.json" />
     <Content Remove="db\CustomItems\volkovs_concordia_ledger.json" />
+    <Content Remove="db\CustomItems\volkov_gssh_01.json" />
+    <Content Remove="db\CustomItems\volkov_gssh_01m.json" />
+    <Content Remove="db\CustomItems\volkov_gssh_02.json" />
+    <Content Remove="db\CustomItems\volkov_gssh_02m.json" />
     <Content Remove="db\customlocales\en.json" />
     <Content Remove="db\CustomLootSpawns\CustomSpawnpointsForced\bigmap_forced.json" />
     <Content Remove="db\customlootspawns\customspawnpointsforced\factory_forced.json" />
     <Content Remove="db\CustomLootSpawns\CustomSpawnpointsForced\interchange_forced.json" />
+    <Content Remove="db\customlootspawns\customspawnpointsforced\lighthouse_forced.json" />
     <Content Remove="db\CustomLootSpawns\CustomSpawnpointsForced\rezervbase_forced.json" />
     <Content Remove="db\customlootspawns\customspawnpointsforced\shoreline_forced.json" />
     <Content Remove="db\CustomLootSpawns\CustomSpawnpointsForced\woods_forced.json" />
@@ -73,6 +102,7 @@
     <Content Remove="db\CustomQuests\66a0f6b2c4d8e90123456789\Quests\cold_freight.json" />
     <Content Remove="db\CustomQuests\66a0f6b2c4d8e90123456789\Quests\dead_drop_rules.json" />
     <Content Remove="db\CustomQuests\66a0f6b2c4d8e90123456789\Quests\depot_rats.json" />
+    <Content Remove="db\CustomQuests\66a0f6b2c4d8e90123456789\Quests\foreign_parts.json" />
     <Content Remove="db\customquests\66a0f6b2c4d8e90123456789\quests\no_names_spoken.json" />
     <Content Remove="db\customquests\66a0f6b2c4d8e90123456789\quests\old_bear_trails.json" />
     <Content Remove="db\CustomQuests\66a0f6b2c4d8e90123456789\Quests\paper_shields.json" />
@@ -92,6 +122,7 @@
     <Content Remove="db\CustomQuestZones\dead_drop_rules.json" />
     <Content Remove="db\CustomQuestZones\depot_rats.json" />
     <Content Remove="db\customquestzones\first_dead_drop.json" />
+    <Content Remove="db\customquestzones\foreign_parts.json" />
     <Content Remove="db\customquestzones\no_names_spoken.json" />
     <Content Remove="db\customquestzones\old_bear_trails.json" />
     <Content Remove="db\CustomQuestZones\paper_shields.json" />
@@ -104,6 +135,7 @@
     <Content Remove="db\CustomConsumables\volkov_regen.json" />
     <Content Remove="db\customquestzones\used_but_usable.json" />
     <Content Remove="db\CustomWeaponPresets\BTAKM_Preset.json" />
+    <Content Remove="db\CustomWeaponPresets\BTASH-12_Preset.json" />
     <Content Remove="db\CustomWeaponPresets\BTASVAL_Preset.json" />
     <Content Remove="db\CustomWeaponPresets\FA209_Preset.json" />
     <Content Remove="db\CustomWeaponPresets\FAPM9X18_Preset.json" />
@@ -111,6 +143,7 @@
     <Content Remove="db\CustomWeaponPresets\FASTM_Preset.json" />
     <Content Remove="db\CustomWeaponPresets\SVDSARB_Preset.json" />
     <Content Remove="db\CustomWeapons\BTAKM.json" />
+    <Content Remove="db\CustomWeapons\BTASH12.json" />
     <Content Remove="db\CustomWeapons\BTASVAL.json" />
     <Content Remove="db\CustomWeapons\FA136.json" />
     <Content Remove="db\CustomWeapons\FA136_Preset.json" />
