@@ -678,6 +678,11 @@ public sealed class YATMTraderRuntimeService(
 
                 var candidateTpl = YATMConfig.GetTemplateId(candidateItem);
 
+                if (IsConfiguredAmmoPackTpl(config, candidateTpl))
+                {
+                    continue;
+                }
+
                 // Ammo pack barter offers keep special stock limits and are not part of the random OOS pool.
                 // Check by OfferId first because the _tpl swap can fail readback on some SPT model wrappers
                 // even after the serialized value has been updated.
@@ -858,6 +863,20 @@ public sealed class YATMTraderRuntimeService(
         {
             YATMLogger.LogDebug($"[{rollReason}] No items were zeroed by randomization this turn.");
         }
+    }
+
+    private static bool IsConfiguredAmmoPackTpl(YATMConfig config, string? tpl)
+    {
+        if (string.IsNullOrWhiteSpace(tpl))
+        {
+            return false;
+        }
+
+        return config.Prices.Any(priceConfig =>
+            string.Equals(
+                GetStringMember(priceConfig, "AmmoBarterPackTplId"),
+                tpl,
+                StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool OfferUsesNonCurrencyPayment(TraderAssort assort, string offerId)
@@ -1525,34 +1544,46 @@ public sealed class YATMTraderRuntimeService(
     {
         var priceConfig = limitsData.PriceConfig;
         var upd = GetMemberValue(offer, "Upd");
+
         if (upd == null)
         {
             YATMLogger.LogDebug($"[Pricing] Ammo pack barter stock skipped because offer has no Upd data: {priceConfig.ItemName ?? "Unknown item"}");
             return;
         }
 
-        var buyRestrictionMax = Math.Max(1, limitsData.PackBuyRestrictionMax);
+        // Number of packs the player can barter for this reset.
+        var packBuyRestrictionMax = Math.Max(1, limitsData.PackBuyRestrictionMax);
 
-        SetMemberValue(upd, "UnlimitedCount", false);
-        SetMemberValue(upd, "StackObjectsCount", buyRestrictionMax);
-        SetMemberValue(upd, "BuyRestrictionMax", buyRestrictionMax);
+        // Number of rounds inside one pack.
+        // This must stay as the pack content count, not the trader buy limit.
+        var packContentCount = limitsData.PackSize > 0
+            ? limitsData.PackSize
+            : Math.Max(1, GetIntMember(upd, "StackObjectsCount", 1));
+
+        SetMemberValue(upd, "UnlimitedCount", true);
+        SetMemberValue(upd, "StackObjectsCount", packContentCount);
+        SetMemberValue(upd, "BuyRestrictionMax", packBuyRestrictionMax);
         SetMemberValue(upd, "BuyRestrictionCurrent", 0);
 
         YATMLogger.LogRealDebug(
             $"[Pricing] Ammo pack barter stock: {priceConfig.ItemName ?? "Unknown item"} | " +
-            $"LooseBuyRestrictionMax {limitsData.LooseBuyRestrictionMax} | PackSize {limitsData.PackSize} | " +
-            $"StackObjectsCount {buyRestrictionMax} | BuyRestrictionMax {buyRestrictionMax}");
+            $"LooseBuyRestrictionMax {limitsData.LooseBuyRestrictionMax} | " +
+            $"PackSize {limitsData.PackSize} | " +
+            $"PackContentCount {packContentCount} | " +
+            $"BuyRestrictionMax {packBuyRestrictionMax}");
     }
 
-    private static int GetAmmoPackBuyRestrictionMax(PriceConfigItem priceConfig, int looseBuyRestrictionMax, int packSize)
+    private static int GetAmmoPackBuyRestrictionMax(
+        PriceConfigItem priceConfig,
+        int looseBuyRestrictionMax,
+        int packSize)
     {
         if (looseBuyRestrictionMax > 0 && packSize > 0)
         {
-            return Math.Max(1, looseBuyRestrictionMax / packSize);
+            return Math.Max(
+                1,
+                (int)Math.Ceiling(looseBuyRestrictionMax / (double)packSize));
         }
-
-        // Fallback keeps old behavior if an items.json row is missing AmmoBarterPackSize
-        // or the loose offer has no BuyRestrictionMax.
         return GetLegacyAmmoPackBuyRestrictionMax(priceConfig);
     }
 
